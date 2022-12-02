@@ -3,6 +3,7 @@
 
 # Created project, so I could check all stats of
 # clash of clans army and design strats based off stats
+import csv
 
 import pandas as pd
 
@@ -15,10 +16,12 @@ def intro(name):
 
 
 # Adds troop to the army
-def add_troop(troop, num_troops, space, army, df, level):
-    troop_space = parse_troop_stats(df,level, troop)
+def add_troop(troop, num_troops,space, army, df, level):
+    global total_space
     total_space = space + (int(num_troops) * int(troop_space))
-    army = {troop:num_troops}
+    print(num_troops, troop_space)
+    added_troops = {troop:num_troops}
+    army.update(added_troops)
     print(f"Total Troop Space: {total_space} || Troops: {army}")
     print()
     return total_space
@@ -26,7 +29,7 @@ def add_troop(troop, num_troops, space, army, df, level):
 
 # Adds troop to the army
 def remove_troop(troop, num_troops, space, army, df, level):
-    troop_space = parse_troop_stats(df,level, troop)
+    global total_space
     total_space = space - (num_troops * troop_space)
     army.append(troop)
     print(f"Total Troop Space: {total_space} Troops:{army}")
@@ -36,31 +39,20 @@ def remove_troop(troop, num_troops, space, army, df, level):
 # Parses troop stats and creates a troop dictionary
 # Parameters: dataframe, level
 # Returns the stats of all the troops by the user level
-def parse_troop_stats(df, user_level, troop_name):
-    for index, row in df.iterrows():
-        name = troop_name
-        damage,speed = str(row[6]),str(row[3])
-        health, level, housingSpace = str(row[4]), str(row[1]), str(row[2])
-        if user_level == level:
-            troop = {
-                'Troop Name': name,
-                'Speed': speed,
-                'Damage': damage,
-                'Hitpoints': health,
-                'HousingSpace': housingSpace,
-                'Level': level,
-            }
-            # print(troop)
-            return troop['HousingSpace']
+def parse_troop_stats(file):
+    with open(file) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            print(row)
 
 
 # Dataframe for the troop CSV file
-df_troop = pd.read_csv('/Users/pmejia/PycharmProjects/WarGeneral/Troops.csv')
-names_troops = df_troop['Name']
+df_troop = '/Users/pmejia/PycharmProjects/WarGeneral/Troops.csv'
 
 # instantiates the total army camp space and camp size
-total_space, camp_size = 0, 240
-army_troops = []
+camp_size = 240
+total_space = 0
+army_troops = {}
 
 # Main loop
 if __name__ == '__main__':
@@ -72,24 +64,27 @@ if __name__ == '__main__':
         print('Your level is: ',user_level)
         user_troop = input("Which troop's stats would you like to see. \n")
         print(f'You selected {user_troop}')
-        parse_troop_stats(df_troop, user_level, user_troop)
-
+        troop = parse_troop_stats(df_troop)
+        print(troop)
     if choice == 'army':
+        # Gets users troop level
         user_level = input("What is your troop level \n")
         print(f"Troop Level: {user_level}")
-        print(f"Current Army Camp: ", f"Current Army total: {total_space}/{camp_size}")
+        print(f"Current Army Camp: ", f"Current Army total: 0/{camp_size}")
 
-        if camp_size > total_space:
+        # Loop for picking troops
+        while camp_size > total_space:
             user_troop = input("Which troop would you like to add. \n")
             print(f'You selected {user_troop}')
             num_troops = input("How many troops would you like to add to your camp? \n")
             print(f'You selected to add {num_troops} {user_troop} troops.')
 
-            parse_troop_stats(df_troop, user_level, user_troop)
-            add_troop(user_troop,num_troops,total_space,army_troops, df_troop, user_level)
-    if choice == 'a':
-        if camp_size > total_space:
-            user_level, num_troops, user_troop = 5, 5, 'Archer'
+            troop_space = parse_troop_stats(df_troop, user_level, user_troop)
+            troop = add_troop(user_troop,num_troops,total_space,army_troops, df_troop, user_level)
 
-    else:
-        print("Army camp:")
+    # Shortcut
+    # if choice == 'a':
+    #     user_level, num_troops, user_troop = 5, 5, 'Archer'
+    #     if camp_size > total_space:
+    #         parse_troop_stats(df_troop, user_level, user_troop)
+    #         add_troop(user_troop, num_troops, total_space, army_troops, df_troop, user_level)

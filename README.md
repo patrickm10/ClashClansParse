@@ -13,3 +13,5 @@ This file contains data about various troops in a game. Each row represents a di
 - `DPS`: The damage per second the troop can inflict.
 
 ## Example Data
+
+In this example, a level 1 Barbarian occupies 1 housing space, has a speed of 45, 20 hitpoints, is not a flying unit, and can inflict 54 damage per second. Similarly, a level 1 Archer occupies 1 housing space, has a speed of 20, 24 hitpoints, is not a flying unit, and can inflict 23 damage per second.

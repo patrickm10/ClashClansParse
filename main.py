@@ -1,90 +1,146 @@
-# War General for Clash of Clans
-# Author: Patrick Mejia
-
-# Created project, so I could check all stats of
-# clash of clans army and design strats based off stats
 import csv
-
+import numpy as np
 import pandas as pd
 
 
 def intro(name):
     print(f'Hi, {name}')
-    print('This is a troop calculator I created when I was bored.\n'
-          'It checks the stats of each troop and creates the strongest'
-          'army based off your troop count and strats.\n')
+    print('This is a program to help you design your army camp for Clash of Clans. ' +
+        'It is made to help you keep track of your army camp space and army damage. ' +
+        'and a visyal representation of your army camp. ')
+    
 
-
-# Adds troop to the army
-def add_troop(troop, num_troops,space, army, df, level):
-    global total_space
-    total_space = space + (int(num_troops) * int(troop_space))
-    print(num_troops, troop_space)
-    added_troops = {troop:num_troops}
-    army.update(added_troops)
+# TODO: Work on adding counter to the number of troops in the army
+# and list the troops in the army in a dictionary
+def add_troop(troop, num_troops, total_space, army):
+    '''
+    Adds a troop to the army
+    :param troop: The troop to add
+    :param num_troops: The number of troops to add
+    :param total_space: The total space of the army
+    :param army: The current army
+    :return: The total space and the army
+    '''
+    troop_space = int(num_troops) * int(troop['space'])
+    total_space += troop_space
+    army[troop['name']] = num_troops
     print(f"Total Troop Space: {total_space} || Troops: {army}")
-    print()
-    return total_space
+    return total_space, army
 
-
-# Adds troop to the army
-def remove_troop(troop, num_troops, space, army, df, level):
-    global total_space
-    total_space = space - (num_troops * troop_space)
-    army.append(troop)
+# TODO: Work on removing a troop from the army
+# and list the troops in the army in a dictionary
+def remove_troop(troop, num_troops, total_space, army):
+    '''
+    Removes a troop from the army
+    :param troop: The troop to remove
+    :param num_troops: The number of troops to remove
+    :param total_space: The total space of the army
+    :param army: The current army
+    :return: The total space and the army
+    '''
+    troop_space = num_troops * troop['space']
+    total_space -= troop_space
+    del army[troop['name']]
     print(f"Total Troop Space: {total_space} Troops:{army}")
-    return total_space
+    return total_space, army
 
-
-# Parses troop stats and creates a troop dictionary
-# Parameters: dataframe, level
-# Returns the stats of all the troops by the user level
 def parse_troop_stats(file):
-    with open(file) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            print(row)
+    '''
+    Parses the troop stats from a CSV file
+    :param file: The file to parse
+    :return: A list of troop stats
+    '''
+    try:
+        df = pd.read_csv(file)
+        return df.to_dict('records')
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return None
 
+def get_troop_by_name(troops, name):
+    '''
+    Gets a troop by name
+    :param troops: The list of troops
+    :param name: The name of the troop
+    :return: The troop with the given name
+    '''
+    # Convert list of troops to DataFrame
+    df = pd.DataFrame(troops)
 
-# Dataframe for the troop CSV file
-df_troop = '/Users/pmejia/PycharmProjects/WarGeneral/Troops.csv'
+    # Remove 'trooplevel' and 'isflying' columns
+    df = df.drop(columns=['TroopLevel', 'IsFlying'])
 
-# instantiates the total army camp space and camp size
-camp_size = 240
-total_space = 0
-army_troops = {}
+    # Remove duplicates
+    df = df.drop_duplicates(subset=['Name'])
 
-# Main loop
-if __name__ == '__main__':
+    # If name is 'all', return all troops
+    if name.lower() == 'all':
+        return df.to_dict('records')
+
+    # Otherwise, return the troop with the given name
+    troop = df[df['Name'].str.lower() == name.lower()]
+    return troop.to_dict('records') if not troop.empty else None
+
+def main():
+    '''
+    Main function to run the program
+    '''
+    df_troop = 'Troops.csv'
+    camp_size = 240
+    total_space = 0
+    army_troops = {}
+
     intro('Patrick')
-    # Gives user option to design army or see stats
-    choice = input("Would you like to see the stat troops or design an army? Enter 'army' or 'stats'. \n")
-    if choice == 'stats':
-        user_level = input("What is your troop level \n")
-        print('Your level is: ',user_level)
-        user_troop = input("Which troop's stats would you like to see. \n")
-        print(f'You selected {user_troop}')
-        troop = parse_troop_stats(df_troop)
-        print(troop)
-    if choice == 'army':
-        # Gets users troop level
-        user_level = input("What is your troop level \n")
-        print(f"Troop Level: {user_level}")
-        print(f"Current Army Camp: ", f"Current Army total: 0/{camp_size}")
+    troops = parse_troop_stats(df_troop)
+    sorted_troops = pd.DataFrame(troops)
+    sorted_troops = sorted_troops.drop(columns=['TroopLevel', 'IsFlying'])
+    sorted_troops = sorted_troops.drop_duplicates(subset=['Name'])
+    sorted_troops = sorted_troops.sort_values(by=['Name'],ignore_index=True)
+    print(f"Troops: {sorted_troops.to_string(index=False)}\n")
+    print('****************************************************************************************************')
+    
+    actions = {
+        'stats': show_stats,
+        'army': design_army,
+    }
 
-        # Loop for picking troops
-        while camp_size > total_space:
-            user_troop = input("Which troop would you like to add. \n")
-            print(f'You selected {user_troop}')
-            num_troops = input("How many troops would you like to add to your camp? \n")
-            print(f'You selected to add {num_troops} {user_troop} troops.')
+    while True:
+        choice = input("Would you like to see the stat troops, design an army or quit? Enter 'stats', 'army' or 'quit'. \n")
+        if choice in actions:
+            action = actions[choice]
+            if choice == 'stats':
+                user_troop_name = input("Which troop's stats would you like to see. \n")
+                user_troop = get_troop_by_name(troops, user_troop_name)
+                action(user_troop)
+            elif choice == 'army':
+                print(f"Current Army Camp: ", f"Current Army total: 0/{camp_size}")
+                while camp_size > total_space:
+                    user_troop_name = input("Which troop would you like to add. \n")
+                    num_troops = input("How many troops would you like to add to your camp? \n")
+                    user_troop = get_troop_by_name(troops, user_troop_name)
+                    total_space, army_troops = action(user_troop, num_troops, total_space, army_troops)
+        elif choice == 'quit' or choice == 'q':
+            break
+        else:
+            print('Invalid choice')
 
-            troop_space = parse_troop_stats(df_troop, user_level, user_troop)
-            troop = add_troop(user_troop,num_troops,total_space,army_troops, df_troop, user_level)
+def show_stats(troop):
+    '''
+    Shows the stats of a troop
+    :param troop: The troop to show stats for
+    '''
+    print(troop)
 
-    # Shortcut
-    # if choice == 'a':
-    #     user_level, num_troops, user_troop = 5, 5, 'Archer'
-    #     if camp_size > total_space:
-    #         parse_troop_stats(df_troop, user_level, user_troop)
-    #         add_troop(user_troop, num_troops, total_space, army_troops, df_troop, user_level)
+def design_army(troop, num_troops, total_space, army):
+    '''
+    Designs an army
+    :param troop: The troop to add
+    :param num_troops: The number of troops to add
+    :param total_space: The total space of the army
+    :param army: The current army
+    :return: The total space and the army
+    '''
+    return add_troop(troop, num_troops, total_space, army)
+
+if __name__ == '__main__':
+    main()

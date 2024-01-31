@@ -1,7 +1,6 @@
 # Troops.csv Data Description
 
-This file contains data about various troops in a game. Each row represents a different level of a specific troop type.
-
+This was a quick script I wrote when I was bored and now I'm fixing it up a bit
 ## Columns
 
 - `Name`: The name of the troop.
